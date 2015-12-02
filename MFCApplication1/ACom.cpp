@@ -10,7 +10,7 @@ int OpenComm(char* port)
 	wcscpy((LPTSTR)wszClassName, T2W((LPTSTR)_port.GetBuffer(NULL)));
 	_port.ReleaseBuffer();
 	/*实现char*到LPCWSTR的转换*/
-	A_hCom = CreateFile(wszClassName,
+	A_hCom = CreateFile(_port,
 		GENERIC_READ|GENERIC_WRITE, //允许读和写
 		0, //独占方式
 		NULL,

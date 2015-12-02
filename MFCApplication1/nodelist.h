@@ -3,9 +3,10 @@
 #include <stdio.h> 
 
 typedef struct Data{
-	int ex;
-	int ey;
+	double ex;
+	double ey;
 	int nlist;
+	double rssi;
 }Data;
 struct Node{
 	Data data;

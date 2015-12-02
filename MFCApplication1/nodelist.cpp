@@ -87,7 +87,7 @@ Data nodelist::pushnext(){
 	return null;
 }
 
-int delall(){
+int nodelist::delall(){
 	return 0;
 
 }
