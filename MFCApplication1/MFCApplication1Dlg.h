@@ -22,8 +22,6 @@ public:
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 支持
 
-	void PaintCoordinateSystem(int x_min, int x_step, int y_min, int y_step);
-
 // 实现
 protected:
 	HICON m_hIcon;

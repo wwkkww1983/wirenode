@@ -2,13 +2,13 @@
 #include "nodelist.h"
 
 
-nodelist::nodelist()
+NL::NL()
 {
 	head = NULL;
 	current = NULL;
 }
 
-int nodelist::add(Data data){
+int NL::add(Data data){
 	Node *p1, *p2;
 	p1 = p2 = (Node*)malloc(sizeof(Node));
 	p1->data = data;
@@ -27,7 +27,7 @@ int nodelist::add(Data data){
 	return 1;
 }
 
-int nodelist::del(Node *node){
+int NL::del(Node *node){
 	if (node == NULL)//²éÕÒ¿Õ½Úµã
 		return 0;
 	if (head = node)
@@ -48,18 +48,17 @@ int nodelist::del(Node *node){
 	}
 }
 
-int nodelist::del(Data data){
+int NL::del(Data data){
 	if (del(search(data))){
 		return 1;
 	};
 	return 0;
 }
 
-Node* nodelist::search(Data data){
+Node* NL::search(Data data){
 	Node* p1 = head;
 	while (p1!=NULL&&p1->data.nlist != data.nlist){
 		p1 = p1->next;
-
 	}
 	if (p1 == NULL){
 		return NULL;
@@ -70,7 +69,7 @@ Node* nodelist::search(Data data){
 	}
 }
 
-Data nodelist::pushnext(){
+Data NL::pushnext(){
 	Data null;
 	null.ex = 0;
 	null.ey = 0;
@@ -82,15 +81,30 @@ Data nodelist::pushnext(){
 		p1 = current;
 		current = current->next;
 		return p1->data;
-
 	}
+	current = head;
 	return null;
 }
 
-int nodelist::delall(){
+int NL::delall(){
 	return 0;
 
 }
-nodelist::~nodelist()
+
+Node* NL::search(int nlist){
+	Node* p1 = head;
+	while (p1 != NULL&&p1->data.nlist != nlist){
+		p1 = p1->next;
+	}
+	if (p1 == NULL){
+		return NULL;
+	}
+	else
+	{
+		return p1;
+	}
+
+}
+NL::~NL()
 {
 }

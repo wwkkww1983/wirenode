@@ -13,7 +13,7 @@
 #define bufferSize 35
 Data mdata[4];
 
-nodelist list;
+NL list;
 static HANDLE comThread;
 static DWORD WINAPI comThreadFun(LPVOID IpParameter);
 int convert(std::string strr, unsigned char * buffer);
@@ -71,20 +71,6 @@ void CMFCApplication1Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_TCHART1, m_chart);
 	DDX_Control(pDX, IDC_LIST2, mlist);
 
-	LONG lStyle;
-	lStyle = GetWindowLong(mlist.m_hWnd, GWL_STYLE);
-	lStyle &= ~LVS_TYPEMASK;
-	lStyle |= LVS_REPORT;
-	SetWindowLong(mlist.m_hWnd, GWL_STYLE, lStyle);
-
-	DWORD dwStyle = mlist.GetExtendedStyle();
-	dwStyle |= LVS_EX_FULLROWSELECT;
-	dwStyle |= LVS_EX_GRIDLINES;
-	dwStyle |= LVS_EX_CHECKBOXES;
-	mlist.SetExtendedStyle(dwStyle);
-
-	mlist.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-	mlist.InsertColumn(0, L"节点", LVCFMT_LEFT, 100);
 }
 
 BEGIN_MESSAGE_MAP(CMFCApplication1Dlg, CDialog)
@@ -134,6 +120,20 @@ BOOL CMFCApplication1Dlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
 	// TODO:  在此添加额外的初始化代码
+	LONG lStyle;
+	lStyle = GetWindowLong(mlist.m_hWnd, GWL_STYLE);
+	lStyle &= ~LVS_TYPEMASK;
+	lStyle |= LVS_REPORT;
+	SetWindowLong(mlist.m_hWnd, GWL_STYLE, lStyle);
+
+	DWORD dwStyle = mlist.GetExtendedStyle();
+	dwStyle |= LVS_EX_FULLROWSELECT;
+	dwStyle |= LVS_EX_GRIDLINES;
+	dwStyle |= LVS_EX_CHECKBOXES;
+	mlist.SetExtendedStyle(dwStyle);
+
+	mlist.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	mlist.InsertColumn(0, L"节点", LVCFMT_LEFT, 100);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -186,120 +186,9 @@ HCURSOR CMFCApplication1Dlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-void CMFCApplication1Dlg::PaintCoordinateSystem(
-	int x_min,    // x轴起始座标
-	int x_step, // 显示间隔
-	int y_min, // y轴起始座标
-	int y_step)// 显示间隔
-{
-	CPen pen(1, 5, RGB(0x7A, 0x7A, 0x7A));
-	CClientDC *pDC = new CClientDC(this);
-	//设置映射模式，单位为0.1mm，引时窗口坐标系以客户区左上角为原点，
-	//X轴的方向为从左往右，Y轴的方向为从下往上
-	pDC->SetMapMode(MM_LOMETRIC);
-	pDC->SelectObject(&pen);
-	//获得客户区域
-	CRect rect;
-	GetClientRect(&rect);
-	//将客户坐标转换为逻辑坐标，
-	pDC->DPtoLP(&rect);
-	//在逻辑坐标下，意图将视口原点所置的位置
-	CSize org(200, -rect.bottom - 200);
-	//将该位置转换为设置坐标，方便移动视口坐标原点
-	pDC->LPtoDP(&org);
-	//移动视口坐标原点，整个坐标尺在可见区域
-	pDC->SetViewportOrg(org.cx, org.cy);
-	//在逻辑坐标系下画X轴，起点为逻辑坐标系下的原点，终点为自定的
-	pDC->MoveTo(0, 0);
-	//X轴的长度为客户区的宽度减去5厘米（一个象素单位为0.1mm),此时X轴终点距右边框的距离将为3cm（视口原点已经移
-	//动到距左边框2cm处）
-	pDC->LineTo(rect.right * 2 / 3, 0);
-
-
-	pDC->MoveTo(rect.right * 2 / 3, 0);
-	pDC->LineTo(rect.right * 2 / 3 - 50, 20);
-	pDC->MoveTo(rect.right * 2 / 3, 0);
-	pDC->LineTo(rect.right * 2 / 3 - 50, -20);
-	pDC->TextOut(rect.right * 2 / 3, 0, L"X");
-
-
-	//在逻辑坐标系下画Y轴，起点为逻辑坐标系下的原点，终点为自定的
-	pDC->MoveTo(0, 0);
-	//Y轴的长度为客户区的高度减去5厘米（一个象素单位为0.1mm),此时Y轴终点距上边框的距离将为3cm（视口原点已经移
-	//动到距下边框2cm处）
-	pDC->LineTo(0, -rect.bottom - 500);
-	//以下代码用来画Y轴的终点箭头
-	pDC->MoveTo(-20, -rect.bottom - 540);
-	pDC->LineTo(0, -rect.bottom - 500);
-	pDC->MoveTo(20, -rect.bottom - 540);
-	pDC->LineTo(0, -rect.bottom - 500);
-	pDC->TextOut(0, -rect.bottom - 400, L"Y");
-	//在画标尺时，刻度的最大单位为cm，最小单位为mm，坐标轴上只画有整数个cm段，并在相应的位置标明cm刻度
-	//计算X轴可以画出多少个cm刻度
-	int num = (rect.right + 1000) / 200;
-	//利用循环画X轴上的刻度，i表示第多少个mm刻度，总共为num*10个毫米刻度
-	int k = x_min;
-	for (int i = 0; i <= num * 10; i++)
-	{
-
-		//刻度能为5整除，此时的可能值为：5，10，15……
-		if (i % 5 == 0)
-		{
-
-
-			//刻度为10的倍数时，画出刻度标记，它的长度为4mm,并在刻度的下方标明刻度值，单位为cm
-			if ((i % 20 == 0) && (k%x_step == 0)) // 间隔为step,默认为20
-			{
-				pDC->MoveTo(i * 10, 0);
-				pDC->LineTo(i * 10, 40);
-				CString str;
-				str.Format(L"%d", k);  // 显示刻度
-				pDC->TextOut(i * 10 - 10, -10, str);
-				k += x_step;
-			}
-			else//刻度为5，15等时，画出刻度标记，它的长度为2mm
-			{
-				pDC->MoveTo(i * 10, 0);
-				pDC->LineTo(i * 10, 20);
-			}
-
-		}
-	}
-
-
-	//计算Y轴可以画出多少个cm刻度
-	num = (-rect.bottom - 500) / 100;
-	k = y_step;
-	//相用画X轴上的坐标相同的方法来绘制Y轴坐标，此时注意绘画点的改变
-	for (int i = 1; i <= num * 10; i++)
-	{
-		if (i % 5 == 0)
-		{
-			if ((i % 20 == 0) && (k%y_step == 0))
-			{
-				pDC->MoveTo(0, i * 10);
-				pDC->LineTo(40, i * 10);
-				CString str;
-				str.Format(L"%d", k);
-				pDC->TextOut(-45, i * 10 + 10, str);
-				k += y_step;
-			}
-			else
-			{
-				pDC->MoveTo(0, i * 10);
-				pDC->LineTo(20, i * 10);
-			}
-		}
-	}
-
-
-	delete pDC;
-}
-
 void CMFCApplication1Dlg::OnBnClickedOk()
 {
 	// TODO:  在此添加控件通知处理程序代码
-	//PaintCoordinateSystem(0, 1, 0, 1);
 	OnOK();
 }
 
@@ -317,20 +206,6 @@ void CMFCApplication1Dlg::OnEnChangeEdit1()
 	// 发送此通知，除非重写 CDialog::OnInitDialog()
 	// 函数并调用 CRichEditCtrl().SetEventMask()，
 	// 同时将 ENM_CHANGE 标志“或”运算到掩码中。
-
-	// TODO: 在此添加控件通知处理程序代码
-	//CDialogEx::OnOK();
-	//获得EDIT 
-	//CEdit* pBoxOne; 
-	//pBoxOne = (CEdit*) GetDlgItem(IDC_EDIT1); 
-	//赋值 
-	//pBoxOne-> SetWindowText( _T("FOO ") ); 
-	//取值 
-	//CString str;
-	//pBoxOne-> GetWindowText(str); 
-
-	//MessageBox(str,_T("程序运行结果"),MB_OK);
-	//str.ReleaseBuffer();
 
 	// TODO:  在此添加控件通知处理程序代码
 }
@@ -401,6 +276,7 @@ void CMFCApplication1Dlg::OnNMClickList2(NMHDR *pNMHDR, LRESULT *pResult)
 	*pResult = 0;
 }
 
+//串口数据解析
 DWORD WINAPI comThreadFun(LPVOID IpParameter){
 	string strr = "ok";
 	convert(strr, buffer);
@@ -412,7 +288,7 @@ DWORD WINAPI comThreadFun(LPVOID IpParameter){
 			ReadData(A_hCom, buffer, bufferSize);
 			if (buffer[0] == '$'){
 				if (buffer[5] == '1'){
-					mdata[0].nlist = 1;
+					mdata[0].nlist = buffer[5]-0x30;
 					//解析纬度7-10 12-16
 					mdata[0].ey = ((buffer[7] - 0x30) * 10 + buffer[8] - 0x30) + \
 						(buffer[9] - 0x30) / 6.0 + (buffer[10] - 0x30) / 60.0 + (buffer[12] - 0x30) / 600.0 + \
@@ -427,7 +303,7 @@ DWORD WINAPI comThreadFun(LPVOID IpParameter){
 					//会不会溢出？？？
 				}
 				if (buffer[5] == '2'){
-					mdata[1].nlist = 2;
+					mdata[1].nlist = buffer[5] - 0x30;
 					//解析
 					mdata[1].ey = ((buffer[7] - 0x30) * 10 + buffer[8] - 0x30) + \
 						(buffer[9] - 0x30) / 6.0 + (buffer[10] - 0x30) / 60.0 + (buffer[12] - 0x30) / 600.0 + \
@@ -441,7 +317,7 @@ DWORD WINAPI comThreadFun(LPVOID IpParameter){
 						(buffer[33] - 0x30) / 10.0 + (buffer[34] - 0x30) / 100.0;
 				}
 				if (buffer[5] == '3'){
-					mdata[2].nlist = 3;
+					mdata[2].nlist = buffer[5] - 0x30;
 					//解析
 					mdata[2].ey = ((buffer[7] - 0x30) * 10 + buffer[8] - 0x30) + \
 						(buffer[9] - 0x30) / 6.0 + (buffer[10] - 0x30) / 60.0 + (buffer[12] - 0x30) / 600.0 + \
@@ -479,12 +355,10 @@ void CMFCApplication1Dlg::OnBnClickedButton2()
 	if (!OpenComm(W2A(speedcom))){
 		MessageBox(L"串口打开失败", 0);
 		printf("串口打开失败");
-		//return;
-		//MessageBox(L"串口打开失败", L"test com");
+		return;
 	}
 	else{
 		MessageBox(L"串口打开成功");
-		//MessageBox(L"串口打开成功", L"test");
 	}
 
 	comThread = CreateThread(NULL, 0, comThreadFun, (LPVOID)NULL, 0, NULL);
@@ -532,7 +406,7 @@ void CMFCApplication1Dlg::RePainter(){
 	CSeries lineSeries = (CSeries)m_chart.Series(1);
 	lineSeries.Clear();
 	if (mdata[0].ex == 0){
-		MessageBox(L"数据空");
+		MessageBox(L"链表中的数据空");
 		return;
 	}
 	lineSeries.AddXY((double)mdata[0].ex, (double)mdata[0].ey, L"1001", NULL);
